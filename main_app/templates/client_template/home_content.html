@@ -1,0 +1,380 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{page_title}}{% endblock page_title %}
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <!-- Small boxes (Stat box) -->
+        <div class="row">
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-info">
+                    <div class="inner">
+                        <h3>{{total_guards_assigned}}</h3>
+                        <p>Total Guards Assigned</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-bag"></i>
+                    </div>
+                    <a href="{% url 'view_client_guards' %}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <!-- small box -->
+                <div class="small-box bg-warning">
+                    <div class="inner">
+                        <h3>{{guards_on_leave_today}}</h3>
+                        <p>Guards on Leave Today</p>
+                    </div>
+                    <div class="icon">
+                        <i class="ion ion-person-add"></i>
+                    </div>
+                    <a href="{% url 'view_guards_on_leave' %}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+        </div>
+        <!-- /.row -->
+        <!-- Main row -->
+        <div class="row">
+            <div class="col-md-6">
+                <!-- BAR CHART -->
+                <div class="card card-secondary">
+                    <div class="card-header">
+                        <h3 class="card-title">{{page_title}}</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                            <button type="button" class="btn btn-tool" data-card-widget="remove"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart">
+                            <canvas id="barChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.card-body -->
+            </div>
+        </div>
+        <!-- /.row (main row) -->
+    </div><!-- /.container-fluid -->
+</section>
+
+<button
+  id="open-chat"
+  class="btn btn-warning rounded-circle position-fixed d-flex align-items-center justify-content-center"
+  style="right: 20px; bottom: 40px; width: 52px; height: 52px"
+>
+  <i class="fas fa-comments text-white" style="font-size: 28px"></i>
+</button>
+<div id="client_chat_box" class="collapse">
+  <div id="chat-container" class="chat-box">
+    <div class="bg-white shadow-md rounded-lg max-w-lg w-full">
+      <div
+        class="px-4 py-2 border-bottom bg-warning text-white rounded-top d-flex justify-content-between align-items-center"
+      >
+        <p class="text-lg font-semibold mb-0">Admin Bot</p>
+        <button
+          id="close-chat"
+          class="btn btn-link text-secondary p-0"
+          data-toggle="collapse"
+          data-target="#client_chat_box"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <div
+        id="chatbox"
+        class="p-4 h-80 overflow-y-auto chat-messages"
+        style="height: 250px"
+      ></div>
+      <div class="px-2 border-top">
+        <button class="text-primary" id="chat-with-guard-officer">
+          Chat with guard officer?
+        </button>
+      </div>
+      <div class="p-4 border-top d-flex chat-input">
+        <form id="msg-form" class="d-flex">
+          {% csrf_token %}
+
+          <input
+            type="text"
+            name="message"
+            id="message-input"
+            placeholder="Type a message"
+            class="form-control flex-grow-1 rounded-left border-warning"
+          />
+
+          <button
+            type="submit"
+            id="send-button"
+            class="btn btn-warning rounded-right ml-2"
+          >
+            Send
+          </button>
+        </form>
+      </div>
+      <!-- Feedback box -->
+      <div id="feedback-box" class="collapse mt-3">
+        <p>Did you get your answer?</p>
+        <button id="yes-btn" class="btn btn-success">Yes</button>
+        <button id="no-btn" class="btn btn-danger">No</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chat-box {
+    position: fixed;
+    bottom: 80px;
+    right: 15px;
+    width: 350px;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    z-index: 999;
+  }
+  .chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #f8f9fa;
+  }
+  .chat-input {
+    padding: 10px;
+    background-color: #e9ecef;
+  }
+  .chat-toggle {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+  }
+  #open-chat {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  }
+  .rounded-top {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+  .rounded-bottom {
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+
+  .rounded-lg {
+    border-radius: 40px;
+  }
+  #chat-with-guard-officer:not(:disabled):hover {
+    text-decoration: underline;
+  }
+  #chat-with-guard-officer {
+    background-color: transparent;
+    outline: none;
+    border: none;
+  }
+</style>
+{% endblock content %} {% block custom_js %}
+<script>
+  const sendWSEvent = (event, payload) => {
+    if (ws.OPEN) ws.send(JSON.stringify({ event, payload }));
+  };
+
+  const ws = new WebSocket(
+    window.location.origin.replace("http", "ws") + "/ws/"
+  );
+
+  ws.addEventListener("open", function () {
+    sendWSEvent("ping");
+  });
+
+  ws.addEventListener("message", (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+
+      switch (data.event) {
+        case "new-message": {
+          if (data.payload?.message)
+            addUserMessage(data.payload.message, "received");
+
+          break;
+        }
+      }
+    } catch {}
+  });
+
+  let roomId;
+  let isTyping = false;
+  let isChatBotResponse = true;
+
+  const chatbox = document.getElementById("chatbox");
+  const messageForm = document.getElementById("msg-form");
+  const inputField = document.getElementById("message-input");
+  const chatWithGuardOfficer = document.getElementById(
+    "chat-with-guard-officer"
+  );
+
+  document.getElementById("open-chat")?.addEventListener("click", async () => {
+    const response = await fetch("/chat/get_client_room/").then((res) =>
+      res.ok ? res.json() : undefined
+    );
+
+    if (response.id) {
+      roomId = response.id;
+      const data = await fetch(`/chat/messages/${roomId}/`).then((res) => {
+        return res.ok ? res.json() : undefined;
+      });
+
+      if (data?.messages) {
+        const box = document.getElementById("client_chat_box");
+        if (box) {
+          data.messages?.forEach((message) => {
+            addUserMessage(message, message.sent ? "sent" : "received");
+          });
+          box.classList.remove("collapse");
+        }
+      }
+    }
+  });
+
+  chatWithGuardOfficer?.addEventListener("click", function () {
+    isChatBotResponse = false;
+    chatWithGuardOfficer.setAttribute("disabled", true);
+    chatWithGuardOfficer.classList.remove("text-primary");
+    chatWithGuardOfficer.classList.add("text-muted");
+    chatWithGuardOfficer.innerHTML = "Chatting with guard officer";
+  });
+
+  inputField?.addEventListener("input", function () {
+    if (!isTyping) {
+      sendWSEvent({ event: "typing", payload: { roomId } });
+      isTyping = true;
+    }
+  });
+
+  inputField?.addEventListener("blur", function () {
+    if (isTyping) {
+      sendWSEvent({ event: "stopeed-typing", payload: { roomId } });
+      isTyping = false;
+    }
+  });
+
+  messageForm.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    isTyping = false;
+
+    const message = inputField?.value?.trim();
+    if (!message) return;
+
+    const csrftoken = document.querySelector(
+      `[name="csrfmiddlewaretoken"]`
+    )?.value;
+    const url = isChatBotResponse
+      ? "/chat/chatbotmessages/"
+      : `/chat/messages/${roomId}/`;
+
+    messageForm.reset();
+    addUserMessage({ content: message }, "sent");
+    return fetch(url, {
+      method: "post",
+      body: JSON.stringify({ message }),
+      headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
+    })
+      .then(() => {})
+      .catch((err) => {
+        console.log(err);
+        // TODO: Add error message
+      });
+  });
+
+  /**
+   * @params {string} message
+   * @params {"sent"|"received"} type
+   */
+  function addUserMessage(message, type) {
+    if (type === "received") {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("mb-2");
+      messageElement.innerHTML = `<p class="bg-secondary text-dark rounded-lg py-2 px-4 d-inline-block">${message.content}</p>`;
+      chatbox.appendChild(messageElement);
+    }
+
+    if (type === "sent") {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("mb-2", "text-right");
+      messageElement.innerHTML = `<p class="bg-primary text-white rounded-lg py-2 px-4 d-inline-block">${message.content}</p>`;
+      chatbox.appendChild(messageElement);
+    }
+
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+$(document).ready(function(){
+    var site_list = {{ site_list|safe|escape }};
+    var guards_assigned_list = {{ guards_assigned_list }};
+  
+    var barChartData = {
+        labels  : site_list,
+        datasets: [
+            {
+                label               : 'Guards Assigned',
+                backgroundColor     : '#6c757d',
+                borderColor         : 'rgba(60,141,188,0.8)',
+                pointRadius         : false,
+                pointColor          : '#3b8bba',
+                pointStrokeColor    : 'rgba(60,141,188,1)',
+                pointHighlightFill  : '#fff',
+                pointHighlightStroke: 'rgba(60,141,188,1)',
+                data                : guards_assigned_list
+            }, 
+        ]
+    }
+    var barChartCanvas = $('#barChart').get(0).getContext('2d');
+    var temp0 = barChartData.datasets[0];
+
+    barChartData.datasets[0] = temp0;
+
+    var stackedBarChartOptions = {
+        responsive              : true,
+        maintainAspectRatio     : false,
+        scales: {
+            xAxes: [{
+                stacked: true,
+            }],
+            yAxes: [{
+                stacked: true
+            }]
+        }
+    }
+
+    var barChart = new Chart(barChartCanvas, {
+        type: 'bar', 
+        data: barChartData,
+        options: stackedBarChartOptions
+    });
+});
+</script>
+{% endblock custom_js %}

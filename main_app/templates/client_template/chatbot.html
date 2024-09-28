@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .chat-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .chat-container input, .chat-container button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .chat-container button {
+            background-color: #28a745;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+        }
+        .chat-container button:hover {
+            background-color: #218838;
+        }
+        #response {
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        async function sendMessage() {
+            const questionInput = document.getElementById("question");
+            const responseOutput = document.getElementById("response");
+
+            if (!questionInput.value.trim()) {
+                responseOutput.innerText = "Please enter a question.";
+                return;
+            }
+
+            try {
+                const response = await fetch("{% url 'chat:chatbot' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: "question=" + encodeURIComponent(questionInput.value)
+                });
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await response.json();
+                responseOutput.innerText = "Bot: " + data.response;
+            } catch (error) {
+                responseOutput.innerText = "Error: " + error.message;
+            }
+
+            questionInput.value = "";
+        }
+    </script>
+</head>
+<body>
+    <h1>Chat with our bot</h1>
+    <div class="chat-container">
+        <input type="text" id="question" placeholder="Ask a question..." aria-label="Ask a question">
+        <button onclick="sendMessage()">Send</button>
+        <p id="response" aria-live="polite"></p>
+    </div>
+</body>
+</html>

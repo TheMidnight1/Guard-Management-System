@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Chat</title>
+    <style>
+        /* Your CSS styles */
+    </style>
+</head>
+<body>
+    <h1>Chat with Guard Officer</h1>
+
+    <div id="chat-box"></div>
+
+    <script>
+        let ws;
+
+        function openChat(guardOfficerId, guardOfficerEmail) {
+            const senderId = "{{ user.id }}";
+            const roomName = `user_${senderId}_${guardOfficerId}`;
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = `
+                <h2>Chat with ${guardOfficerEmail}</h2>
+                <div id="messages"></div>
+                <input type="text" id="message-input" placeholder="Type a message..."/>
+                <button onclick="sendMessage()">Send</button>
+            `;
+
+            const messagesDiv = document.getElementById('messages');
+
+            ws = new WebSocket(`ws://${window.location.host}/ws/chat/${roomName}/`);
+            ws.onopen = function() {
+                ws.send(JSON.stringify({'fetch_history': true}));
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.messages) {
+                    messagesDiv.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        messagesDiv.innerHTML += `<div class="message"><strong>${msg.sender__email}</strong> <span class="timestamp">(${msg.timestamp})</span>: ${msg.content}</div>`;
+                    });
+                } else if (data.message) {
+                    messagesDiv.innerHTML += `<div class="message"><strong>${data.sender_email}</strong> <span class="timestamp">(${data.timestamp})</span>: ${data.message}</div>`;
+                }
+            };
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            if (input.value.trim() !== '') {
+                ws.send(JSON.stringify({'message': input.value}));
+                input.value = '';
+            }
+        }
+
+        openChat('{{ guard_officer.id }}', '{{ guard_officer.admin.email }}');
+    </script>
+</body>
+</html>

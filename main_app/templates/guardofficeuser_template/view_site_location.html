@@ -1,0 +1,66 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary shadow-sm border-0 rounded">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title">{{ page_title }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Site Name:</strong> {{ site.name }}</p>
+                        <div id="map" style="height: 400px; width: 100%; border: 1px solid #ddd; border-radius: 10px;"></div>
+                    </div>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    .card {
+        background: #ffffff;
+    }
+    .card-header {
+        background: #007bff;
+        color: #ffffff;
+    }
+    #map {
+        border-radius: 10px;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const map = L.map('map').setView([{{ site.latitude }}, {{ site.longitude }}], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+            }).addTo(map);
+
+            const marker = L.marker([{{ site.latitude }}, {{ site.longitude }}]).addTo(map)
+                .bindPopup("{{ site.name }}")
+                .openPopup();
+
+            const radius = {{ site.radius }};
+            const circle = L.circle([{{ site.latitude }}, {{ site.longitude }}], {
+                color: 'green',
+                fillColor: 'green',
+                fillOpacity: 0.5,
+                radius: radius
+            }).addTo(map);
+        } catch (error) {
+            console.error('Error initializing the map:', error);
+        }
+    });
+</script>
+{% endblock content %}
